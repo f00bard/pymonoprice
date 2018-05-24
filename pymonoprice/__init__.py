@@ -29,16 +29,13 @@ class ZoneStatus(object):
                  source: int,
                  keypad: bool):
         self.zone = zone
-        self.pa = bool(pa)
         self.power = bool(power)
         self.mute = bool(mute)
-        self.do_not_disturb = bool(do_not_disturb)
         self.volume = volume
         self.treble = treble
         self.bass = bass
         self.balance = balance
         self.source = source
-        self.keypad = bool(keypad)
 
     @classmethod
     def from_string(cls, string: str):
@@ -58,7 +55,7 @@ class Monoprice(object):
     def zone_status(self, zone: int):
         """
         Get the structure representing the status of the zone
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6
         :return: status of the zone or None
         """
         raise NotImplemented()
@@ -66,7 +63,7 @@ class Monoprice(object):
     def set_power(self, zone: int, power: bool):
         """
         Turn zone on or off
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6,
         :param power: True to turn on, False to turn off
         """
         raise NotImplemented()
@@ -74,7 +71,7 @@ class Monoprice(object):
     def set_mute(self, zone: int, mute: bool):
         """
         Mute zone on or off
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6
         :param mute: True to mute, False to unmute
         """
         raise NotImplemented()
@@ -82,7 +79,7 @@ class Monoprice(object):
     def set_volume(self, zone: int, volume: int):
         """
         Set volume for zone
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6
         :param volume: integer from 0 to 38 inclusive
         """
         raise NotImplemented()
@@ -90,7 +87,7 @@ class Monoprice(object):
     def set_treble(self, zone: int, treble: int):
         """
         Set treble for zone
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6
         :param treble: integer from 0 to 14 inclusive, where 0 is -7 treble and 14 is +7
         """
         raise NotImplemented()
@@ -98,7 +95,7 @@ class Monoprice(object):
     def set_bass(self, zone: int, bass: int):
         """
         Set bass for zone
-        :param zone: zone 11..16, 21..26, 31..36
+        :param zone: zone 1..6
         :param bass: integer from 0 to 14 inclusive, where 0 is -7 bass and 14 is +7
         """
         raise NotImplemented()
@@ -106,16 +103,16 @@ class Monoprice(object):
     def set_balance(self, zone: int, balance: int):
         """
         Set balance for zone
-        :param zone: zone 11..16, 21..26, 31..36
-        :param balance: integer from 0 to 20 inclusive, where 0 is -10(left), 0 is center and 20 is +10 (right)
+        :param zone: zone 1..6
+        :param balance: integer from 0 to 63 inclusive, where 0 is muted(right), 1 is -37.5(right), 31..32 is center and 62 is -37.5(left) and 63 is muted(left)
         """
         raise NotImplemented()
 
     def set_source(self, zone: int, source: int):
         """
         Set source for zone
-        :param zone: zone 11..16, 21..26, 31..36
-        :param source: integer from 0 to 6 inclusive
+        :param zone: zone 1..6
+        :param source: integer from 0 to 1 inclusive, where 0 is bus input and 1 is line in
         """
         raise NotImplemented()
 
@@ -134,36 +131,36 @@ def _format_zone_status_request(zone: int) -> bytes:
 
 
 def _format_set_power(zone: int, power: bool) -> bytes:
-    return '<{}PR{}\r'.format(zone, '01' if power else '00').encode()
+    return '!{}PR{}+'.format(zone, '1' if power else '00').encode()
 
 
 def _format_set_mute(zone: int, mute: bool) -> bytes:
-    return '<{}MU{}\r'.format(zone, '01' if mute else '00').encode()
+    return '!{}MU{}+'.format(zone, '1' if mute else '00').encode()
 
 
 def _format_set_volume(zone: int, volume: int) -> bytes:
     volume = int(max(0, min(volume, 38)))
-    return '<{}VO{:02}\r'.format(zone, volume).encode()
+    return '!{}VO{:02}+'.format(zone, volume).encode()
 
 
 def _format_set_treble(zone: int, treble: int) -> bytes:
     treble = int(max(0, min(treble, 14)))
-    return '<{}TR{:02}\r'.format(zone, treble).encode()
+    return '!{}TR{:02}+'.format(zone, treble).encode()
 
 
 def _format_set_bass(zone: int, bass: int) -> bytes:
     bass = int(max(0, min(bass, 14)))
-    return '<{}BS{:02}\r'.format(zone, bass).encode()
+    return '!{}BS{:02}+'.format(zone, bass).encode()
 
 
 def _format_set_balance(zone: int, balance: int) -> bytes:
     balance = max(0, min(balance, 20))
-    return '<{}BL{:02}\r'.format(zone, balance).encode()
+    return '!{}BA{:02}+'.format(zone, balance).encode()
 
 
 def _format_set_source(zone: int, source: int) -> bytes:
-    source = int(max(1, min(source, 6)))
-    return '<{}CH{:02}\r'.format(zone, source).encode()
+    source = int(max(0, min(source, 1)))
+    return '!{}IS{}+'.format(zone, source).encode()
 
 
 def get_monoprice(port_url):
